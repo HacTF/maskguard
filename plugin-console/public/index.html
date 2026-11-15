@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>插件管控台 · 可行性 PoC</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #0f172a; --ink2: #475569; --muted: #94a3b8;
+    --line: #e2e8f0; --green: #16a34a; --amber: #d97706; --red: #dc2626; --blue: #2563eb;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 56px; }
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+  h1 { font-size: 19px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .card .k { color: var(--muted); font-size: 12px; }
+  .card .v { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .card .v small { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+  .panel > h2 { font-size: 13px; margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink2); font-weight: 600; }
+  .panel .body { padding: 14px 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  .chip { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; border: 1px solid transparent; white-space: nowrap; }
+  #rows td { white-space: nowrap; }
+  #rows td:first-child { min-width: 84px; }
+  #rows td:nth-child(2) { min-width: 104px; }
+  .on { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+  .off { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+  .warn { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+  .bad { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .ok { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .muted { color: var(--muted); }
+  textarea { width: 100%; min-height: 190px; font-family: var(--mono); font-size: 12px; line-height: 1.6;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fcfdff; color: var(--ink); resize: vertical; }
+  textarea:focus { outline: 2px solid #bfdbfe; border-color: #93c5fd; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1 1 auto; }
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); cursor: pointer; }
+  button:hover { border-color: #cbd5e1; }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  button.primary:hover { background: #1e293b; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input[type=text] { font: inherit; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; width: 240px; }
+  .events { max-height: 220px; overflow: auto; font-size: 12.5px; }
+  .event { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px dashed #f1f5f9; }
+  .event .t { color: var(--muted); font-family: var(--mono); font-size: 11.5px; flex: 0 0 62px; }
+  .event .m { flex: 1 1 auto; }
+  .event.error .m { color: var(--red); }
+  .event.warn .m { color: var(--amber); }
+  .missing { display: flex; flex-wrap: wrap; gap: 6px; }
+  .missing span { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-family: var(--mono); }
+  .note { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--ink2); }
+  .note b { color: var(--ink); }
+  .split { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .cards { grid-template-columns: repeat(2, 1fr); } .split { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>浏览器插件管控台</h1>
+    <span class="sub">可行性 PoC · 心跳纳管 + 策略下发 + 覆盖对账</span>
+    <span class="sub grow" style="text-align:right" id="clock"></span>
+  </header>
+
+  <div class="cards" id="stats"></div>
+
+  <div class="split">
+    <div class="panel">
+      <h2>纳管终端</h2>
+      <div class="body" style="padding:0">
+        <table>
+          <thead><tr>
+            <th>标识</th><th>主机</th><th>插件版本</th><th>安装方式</th><th>策略</th><th>状态</th><th>最后心跳</th><th>脱敏</th>
+          </tr></thead>
+          <tbody id="rows"><tr><td colspan="8" class="muted" style="padding:18px">等待插件上报…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>覆盖率对账（资产台账 vs 已注册）</h2>
+      <div class="body">
+        <div class="row" style="margin-bottom:10px">
+          <input type="text" id="assetHost" placeholder="输入主机名，如 ws-03">
+          <button id="btnAsset">加入台账</button>
+          <button id="btnAssetClear" title="清空台账">清空</button>
+        </div>
+        <div id="coverage" class="note">尚未导入资产台账。</div>
+        <div class="note" style="margin-top:10px">
+          <b>为什么要对账</b>：插件没装上就不会心跳，服务端天然看不到它。所以「未安装」只能靠资产台账差集、或企业策略强制安装后的合规报表得出。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>策略下发</h2>
+    <div class="body">
+      <div class="row" style="margin-bottom:10px">
+        <span class="chip ok" id="policyVer">v0</span>
+        <span class="muted" id="policyNote">—</span>
+        <span class="grow"></span>
+        <input type="text" id="note" placeholder="变更说明（可选）">
+        <button class="primary" id="btnPublish">发布新版本</button>
+        <button id="btnRollback">回滚</button>
+      </div>
+      <textarea id="rules" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px">
+        <span class="muted" id="publishMsg"></span>
+        <span class="grow"></span>
+        <button id="btnReload">重置为当前生效策略</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>事件</h2>
+    <div class="body events" id="events"><div class="muted">暂无事件</div></div>
+  </div>
+
+  <div class="note">
+    <b>状态判定</b>：插件每 30s 心跳一次（MV3 alarms 下限），超过 <span id="ttl">15</span>s 无心跳即判离线。
+    <b>策略一致性</b>：插件上报的已应用版本与服务端当前版本不一致即标「待同步」；应用失败会带回错误原因。
+    <b>安装方式</b>：<span class="mono">admin</span> = 企业策略强制安装（用户不可禁用/卸载），<span class="mono">development</span> = 开发者模式加载（本 PoC 场景，用户可随时移除）。
+  </div>
+</div>
+
+<script>
+'use strict';
+let state = null;
+let es = null;
+
+function ago(ts) {
+  if (!ts) return '—';
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 60) return s + 's 前';
+  if (s < 3600) return Math.round(s / 60) + 'm 前';
+  return Math.round(s / 3600) + 'h 前';
+}
+
+function statCard(k, v, unit) {
+  return '<div class="card"><div class="k">' + k + '</div><div class="v">' + v +
+    (unit ? ' <small>' + unit + '</small>' : '') + '</div></div>';
+}
+
+function renderStats(s) {
+  const st = s.stats;
+  document.getElementById('stats').innerHTML = [
+    statCard('纳管插件', st.total, '个'),
+    statCard('在线 / 离线', st.online + ' / ' + st.offline, ''),
+    statCard('策略待同步', st.drift, '个'),
+    statCard('强制安装', st.managed, '个'),
+    statCard('台账未覆盖', st.missing, '台')
+  ].join('');
+  document.getElementById('ttl').textContent = Math.round((s.offlineAfterMs || 15000) / 1000);
+}
+
+function renderRows(s) {
+  const tb = document.getElementById('rows');
+  if (!s.plugins.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="muted" style="padding:18px">等待插件上报…</td></tr>';
+    return;
+  }
+  tb.innerHTML = s.plugins.map(p => {
+    const status = !p.enabled ? '<span class="chip off">已停用</span>'
+      : p.online ? '<span class="chip on">在线</span>' : '<span class="chip off">离线</span>';
+    const applied = typeof p.appliedVersion === 'number' ? p.appliedVersion : null;
+    const policy = p.policyError
+      ? '<span class="chip bad" title="' + p.policyError.replace(/"/g, '&quot;') + '">失败</span>'
+      : applied === null ? '<span class="chip warn">未回执</span>'
+        : p.drift ? '<span class="chip warn">待同步 v' + applied + '</span>'
+          : '<span class="chip ok">v' + applied + '</span>';
+    const install = p.managed ? '<span class="chip on" title="企业策略强制安装，用户不可卸载">强制安装</span>'
+      : '<span class="chip warn" title="' + p.installType + '：用户可禁用或移除">' + p.installType + '</span>';
+    return '<tr>' +
+      '<td>' + p.label + '</td>' +
+      '<td class="mono">' + (p.host || '—') + '</td>' +
+      '<td class="mono">' + (p.extVersion || '—') + '</td>' +
+      '<td>' + install + '</td>' +
+      '<td>' + policy + '</td>' +
+      '<td>' + status + '</td>' +
+      '<td class="muted">' + ago(p.lastSeen) + '</td>' +
+      '<td class="mono">' + (p.maskedTotal || 0) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderCoverage(s) {
+  const c = s.coverage;
+  const el = document.getElementById('coverage');
+  if (!c.expected) {
+    el.innerHTML = '尚未导入资产台账。加入主机后可计算「已装 / 未装」。';
+    return;
+  }
+  const covered = c.expected - c.missing.length;
+  const pct = Math.round(covered / c.expected * 100);
+  el.innerHTML = '<div class="row"><b>覆盖 ' + covered + ' / ' + c.expected + ' 台（' + pct + '%）</b>' +
+    '<span class="grow"></span><span class="muted">已注册插件 ' + c.registered + ' 个</span></div>' +
+    (c.missing.length ? '<div class="missing" style="margin-top:8px">' +
+      c.missing.map(m => '<span>' + m.host + '</span>').join('') + '</div>' : '');
+}
+
+function renderPolicy(s) {
+  document.getElementById('policyVer').textContent = 'v' + s.policy.version;
+  document.getElementById('policyNote').textContent = s.policy.note || '—';
+  document.getElementById('btnRollback').disabled = !s.canRollback;
+}
+
+function renderEvents(s) {
+  const box = document.getElementById('events');
+  if (!s.events.length) { box.innerHTML = '<div class="muted">暂无事件</div>'; return; }
+  box.innerHTML = s.events.map(e => {
+    const d = new Date(e.ts);
+    const t = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') +
+      ':' + String(d.getSeconds()).padStart(2, '0');
+    return '<div class="event ' + e.level + '"><span class="t">' + t + '</span><span class="m">' + e.msg + '</span></div>';
+  }).join('');
+}
+
+function applyState(s) {
+  state = s;
+  renderStats(s);
+  renderRows(s);
+  renderCoverage(s);
+  renderPolicy(s);
+  renderEvents(s);
+  document.getElementById('clock').textContent = '服务端时间 ' + new Date(s.serverTime).toLocaleTimeString();
+}
+
+function setRulesEditor(rules) {
+  document.getElementById('rules').value = JSON.stringify(rules, null, 2);
+}
+
+async function load() {
+  const r = await fetch('/api/state', { cache: 'no-store' });
+  applyState(await r.json());
+  if (!document.getElementById('rules').value.trim()) setRulesEditor(state.policy.rules);
+}
+
+function connect() {
+  if (es) es.close();
+  es = new EventSource('/api/stream');
+  es.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.type === 'state') applyState(m.state);
+    if (m.type === 'event' && state) { state.events.unshift(m.event); renderEvents(state); }
+  };
+  es.onerror = () => { setTimeout(connect, 3000); };
+}
+
+document.getElementById('btnPublish').addEventListener('click', async () => {
+  const msg = document.getElementById('publishMsg');
+  let rules;
+  try { rules = JSON.parse(document.getElementById('rules').value); }
+  catch (e) { msg.textContent = 'JSON 解析失败：' + e.message; return; }
+  if (!Array.isArray(rules) || !rules.length) { msg.textContent = '规则必须是非空数组'; return; }
+  const res = await fetch('/api/admin/policy', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ rules, note: document.getElementById('note').value })
+  });
+  const body = await res.json();
+  msg.textContent = res.ok ? '已发布 v' + body.version + '，插件将在下次同步生效' : ('失败：' + (body.error || res.status));
+  if (res.ok) document.getElementById('note').value = '';
+});
+
+document.getElementById('btnRollback').addEventListener('click', async () => {
+  const res = await fetch('/api/admin/rollback', { method: 'POST' });
+  const body = await res.json();
+  document.getElementById('publishMsg').textContent = res.ok ? '已回滚并下发为 v' + body.version : ('失败：' + body.error);
+  if (res.ok) { const s = await (await fetch('/api/state')).json(); setRulesEditor(s.policy.rules); }
+});
+
+document.getElementById('btnReload').addEventListener('click', async () => {
+  const s = await (await fetch('/api/state')).json();
+  setRulesEditor(s.policy.rules);
+  document.getElementById('publishMsg').textContent = '已载入当前生效策略 v' + s.policy.version;
+});
+
+async function addAsset(host) {
+  const s = await (await fetch('/api/state')).json();
+  const assets = (s.assets || []).slice();
+  if (host) assets.push({ host });
+  await fetch('/api/admin/assets', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ assets })
+  });
+}
+
+document.getElementById('btnAsset').addEventListener('click', async () => {
+  const inp = document.getElementById('assetHost');
+  if (!inp.value.trim()) return;
+  await addAsset(inp.value.trim());
+  inp.value = '';
+});
+
+document.getElementById('btnAssetClear').addEventListener('click', async () => {
+  await fetch('/api/admin/assets', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ assets: [] })
+  });
+});
+
+setInterval(() => { if (state) { renderEvents(state); renderRows(state); } }, 1000);
+load();
+connect();
+</script>
+</body>
+</html>

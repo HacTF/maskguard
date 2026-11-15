@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "enabled": true,
+  "siteMode": "all",
+  "siteList": [],
+  "settings": {
+    "observeDynamic": true,
+    "debounceMs": 120,
+    "revealOnAlt": true,
+    "badge": true,
+    "allowUnsafeRegex": false,
+    "maxTextLength": 8000,
+    "joinSplitText": true,
+    "maskShadowDom": true,
+    "maskSvgText": false,
+    "maskAttributes": false,
+    "maskTitle": false,
+    "skipSelectors": "script, style, noscript, textarea, input, select, option, svg, math, canvas, iframe, object, embed, [contenteditable=\"true\"], [data-mg-skip]"
+  },
+  "rules": [
+    {
+      "id": "test_idcard", "name": "身份证号", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)\\d{17}[\\dXx](?!\\d)", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 6, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_bank", "name": "银行卡号", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)\\d{16,19}(?!\\d)", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 4, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_phone", "name": "手机号", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)1[3-9]\\d{9}(?!\\d)", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_email", "name": "邮箱地址", "kind": "regex", "enabled": true,
+      "pattern": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 2, "keepEnd": 0,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_ip", "name": "IP 地址", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)(?:\\d{1,3}\\.){3}\\d{1,3}(?!\\d)", "flags": "g", "selector": "",
+      "maskType": "fixed", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则（默认内置规则是关闭的，这里打开便于验证）"
+    },
+    {
+      "id": "test_uscc", "name": "统一社会信用代码", "kind": "regex", "enabled": true,
+      "pattern": "[0-9A-HJ-NPQRTUWXY]{18}", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 4, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_landline", "name": "座机号码", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)0\\d{2,3}-?\\d{7,8}(?!\\d)", "flags": "g", "selector": "",
+      "maskType": "partial", "maskChar": "*", "keepStart": 3, "keepEnd": 2,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_plate", "name": "车牌号 · 全部遮盖", "kind": "regex", "enabled": true,
+      "pattern": "[\\u4e00-\\u9fa5][A-Z][·\\-]?[A-Z0-9]{5}", "flags": "g", "selector": "",
+      "maskType": "full", "maskChar": "█", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_amount", "name": "合同金额 · 自定义替换", "kind": "regex", "enabled": true,
+      "pattern": "¥\\s?\\d[\\d,]*\\.\\d{2}", "flags": "g", "selector": "",
+      "maskType": "custom", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "[金额已脱敏]", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_passport", "name": "护照号 · 哈希摘要", "kind": "regex", "enabled": true,
+      "pattern": "(?<!\\d)[A-Z]\\d{8}(?!\\d)", "flags": "g", "selector": "",
+      "maskType": "hash", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_apikey", "name": "API Key · 标签替换", "kind": "regex", "enabled": true,
+      "pattern": "sk-[A-Za-z0-9_-]{16,}", "flags": "g", "selector": "",
+      "maskType": "label", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[密钥已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_jwt", "name": "JWT · 标签替换", "kind": "regex", "enabled": true,
+      "pattern": "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+", "flags": "g", "selector": "",
+      "maskType": "label", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[Token 已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_mac", "name": "MAC 地址 · 保格式打乱", "kind": "regex", "enabled": true,
+      "pattern": "(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}", "flags": "g", "selector": "",
+      "maskType": "pattern", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_name", "name": "姓名 · 标签替换", "kind": "regex", "enabled": true,
+      "pattern": "(?<=姓名[:：])\\s*[\\u4e00-\\u9fa5]{2,4}", "flags": "g", "selector": "",
+      "maskType": "label", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[姓名已脱敏]", "custom": "", "note": "自测页配套规则"
+    },
+    {
+      "id": "test_sel_desc", "name": "位置 · 详情页手机号", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": ".ed-row:nth-child(2) .ed-value",
+      "maskType": "fixed", "maskChar": "█", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "按需启用：只遮值、保留字段名"
+    },
+    {
+      "id": "test_sel_table", "name": "位置 · 表格整列", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": ".tbl td:nth-child(3), .clone-cell",
+      "maskType": "full", "maskChar": "█", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[已脱敏]", "custom": "", "note": "按需启用：含固定列克隆副本"
+    },
+    {
+      "id": "test_sel_bubble", "name": "位置 · 会话气泡", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": ".bubble.in",
+      "maskType": "label", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "label": "[整段已脱敏]", "custom": "", "note": "按需启用"
+    },
+    {
+      "id": "test_sel_file", "name": "位置 · 附件名", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": ".file-name",
+      "maskType": "fixed", "maskChar": "█", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 10, "label": "[已脱敏]", "custom": "", "note": "按需启用"
+    },
+    {
+      "id": "test_blur_canvas", "name": "视觉模糊 · Canvas 表格 / 图表 / PDF 图层", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": "#b04-canvas, #b05-canvas",
+      "maskType": "blur", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "blurRadius": 8, "label": "[已脱敏]", "custom": "",
+      "note": "按需启用：这些载体没有文本节点，只能整块模糊"
+    },
+    {
+      "id": "test_blur_image", "name": "视觉模糊 · 扫描件 / 图片", "kind": "selector", "enabled": false,
+      "pattern": "", "flags": "g", "selector": ".scan-img",
+      "maskType": "blur", "maskChar": "*", "keepStart": 3, "keepEnd": 4,
+      "fixedLength": 8, "blurRadius": 10, "label": "[已脱敏]", "custom": "",
+      "note": "按需启用：图片内文字需 OCR / 后端脱敏，这里只做视觉遮盖"
+    }
+  ]
+}

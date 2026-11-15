@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "受管客户端 PoC（策略下发）",
+  "version": "1.0.0",
+  "description": "浏览器插件纳管可行性验证：注册、心跳、策略拉取与自检上报。",
+  "permissions": ["storage", "alarms", "management", "tabs"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://127.0.0.1/*", "http://localhost/*"],
+      "js": ["vendor/masker.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": { "default_title": "受管客户端 PoC" }
+}

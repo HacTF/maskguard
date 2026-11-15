@@ -1,0 +1,14 @@
+# WorkBuddy / 会话数据
+.workbuddy/
+
+# 运行态数据（含纳管状态、注册密钥，勿提交）
+plugin-console/data/state.json
+plugin-console/data/*.json
+plugin-console/data/*.tmp
+
+# 依赖与系统文件
+node_modules/
+package-lock.json
+.DS_Store
+Thumbs.db
+*.log

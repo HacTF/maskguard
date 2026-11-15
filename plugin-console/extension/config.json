@@ -1,0 +1,6 @@
+{
+  "serverUrl": "http://127.0.0.1:8787",
+  "enrollToken": "demo-enroll-token",
+  "label": "ws-demo-01",
+  "host": "ws-demo-01"
+}

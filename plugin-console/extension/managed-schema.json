@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "serverUrl": { "type": "string", "title": "管控服务端地址", "description": "例如 https://plugin.corp.example.com" },
+    "enrollToken": { "type": "string", "title": "注册令牌" },
+    "label": { "type": "string", "title": "终端标识（展示用）" },
+    "host": { "type": "string", "title": "主机名（用于与资产台账对账）" }
+  }
+}

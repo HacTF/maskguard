@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM-13800138000 · MaskGuard 真实形态覆盖矩阵</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --line: #e6e8ec; --line2: #f1f2f5;
+    --ink: #0f172a; --ink2: #475569; --ink3: #8792a4;
+    --green: #16a34a; --green-bg: #eefbf2;
+    --amber: #b45309; --amber-bg: #fffbeb;
+    --red: #b91c1c; --red-bg: #fef2f2;
+    --blue: #1d4ed8; --blue-bg: #eff6ff;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 0 24px 80px; }
+  code, .mono { font-family: var(--mono); font-size: 12px; }
+  code { background: #f1f3f6; padding: 2px 6px; border-radius: 5px; word-break: break-all; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .topbar { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .topbar-in { max-width: 1220px; margin: 0 auto; padding: 11px 24px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 15px; white-space: nowrap; }
+  .brand i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--green); margin-right: 8px; }
+  nav { display: flex; gap: 13px; flex-wrap: wrap; font-size: 12.5px; }
+  nav a { color: var(--ink2); }
+  nav a:hover { color: var(--green); }
+  .status { margin-left: auto; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; white-space: nowrap; }
+  .status.ok { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
+  .status.warn { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
+
+  header.hero { padding: 38px 0 20px; }
+  header.hero h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -.4px; }
+  header.hero p { margin: 0; color: var(--ink2); max-width: 900px; }
+
+  section { margin-top: 26px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .card-head { padding: 17px 22px 13px; border-bottom: 1px solid var(--line2); }
+  .card-head h2 { margin: 0; font-size: 17px; }
+  .card-head .sub { margin: 4px 0 0; color: var(--ink3); font-size: 12.5px; }
+  .card-body { padding: 18px 22px 22px; }
+
+  .note { border-left: 3px solid var(--green); background: var(--green-bg); padding: 11px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: #14532d; margin: 0 0 14px; }
+  .note.amber { border-color: var(--amber); background: var(--amber-bg); color: #78350f; }
+  .note.blue { border-color: var(--blue); background: var(--blue-bg); color: #1e3a8a; }
+  .note b { font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--line2); vertical-align: top; }
+  th { background: #fafbfc; color: var(--ink2); font-weight: 600; font-size: 11.5px; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .scroll { overflow-x: auto; }
+  .scroll > table { min-width: 820px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+  .tag.mask { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
+  .tag.keep { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
+  .tag.na { background: var(--blue-bg); color: var(--blue); border-color: #bfdbfe; }
+  .hint { color: var(--ink3); font-size: 12px; margin: 12px 0 0; }
+
+  .btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: #fff; color: var(--ink); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn:hover { border-color: var(--green); color: var(--green); background: #fbfffc; }
+  .btn.primary { background: var(--green); border-color: var(--green); color: #fff; }
+  .btn.primary:hover { background: #15803d; color: #fff; }
+  .btn.small { padding: 3px 9px; font-size: 11px; font-weight: 500; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  .shape-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .shape-grid { grid-template-columns: 1fr; } }
+  .shape { border: 1px solid var(--line); border-radius: 11px; overflow: hidden; background: #fff; }
+  .shape-head { padding: 10px 13px; border-bottom: 1px solid var(--line2); background: #fcfcfd; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .shape-head .no { font-family: var(--mono); font-size: 11px; color: var(--ink3); }
+  .shape-head .nm { font-weight: 700; font-size: 12.5px; }
+  .shape-head .src { font-size: 11px; color: var(--ink3); margin-left: auto; }
+  .shape-body { padding: 13px; min-height: 62px; font-size: 13px; }
+  .shape-foot { padding: 8px 13px 11px; border-top: 1px dashed var(--line); color: var(--ink2); font-size: 11.5px; line-height: 1.6; }
+  .shape-foot b { color: var(--ink); }
+  .verdict { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 5px; }
+  .verdict.pass { background: var(--green-bg); color: var(--green); }
+  .verdict.fail { background: var(--red-bg); color: var(--red); }
+  .verdict.wait { background: var(--amber-bg); color: var(--amber); }
+
+  /* realistic component skins */
+  .ed { border: 1px solid #e4e7ed; border-radius: 4px; font-size: 12px; }
+  .ed-row { display: flex; border-bottom: 1px solid #e4e7ed; }
+  .ed-row:last-child { border-bottom: 0; }
+  .ed-label { width: 108px; background: #f5f7fa; padding: 7px 10px; color: #606266; flex: none; }
+  .ed-value { padding: 7px 10px; flex: 1; font-family: var(--mono); color: #303133; }
+  .tbl { border: 1px solid #ebeef5; width: 100%; font-size: 12px; border-collapse: collapse; }
+  .tbl th { background: #f5f7fa; padding: 7px 9px; border-bottom: 1px solid #ebeef5; color: #909399; }
+  .tbl td { padding: 7px 9px; border-bottom: 1px solid #ebeef5; font-family: var(--mono); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .bubble { display: inline-block; background: #e1ffc4; border-radius: 10px 10px 10px 2px; padding: 7px 11px; font-size: 12.5px; }
+  .bubble.in { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px 10px 2px 10px; }
+  .tl { border-left: 2px solid #e4e7ed; padding-left: 12px; }
+  .tl-item { position: relative; padding-bottom: 8px; font-size: 12.5px; }
+  .tl-item::before { content: ''; position: absolute; left: -16px; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: #c0c4cc; }
+  .log { background: #0f172a; color: #a7f3d0; border-radius: 7px; padding: 10px 12px; font-family: var(--mono); font-size: 11.5px; line-height: 1.75; margin: 0; white-space: pre-wrap; }
+  .json { background: #fafbfc; border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; font-family: var(--mono); font-size: 11.5px; }
+  .json .k { color: #7c3aed; }
+  .json .str { color: #0f766e; }
+  .json .num { color: #b45309; }
+  .file-name { font-size: 12.5px; }
+  .md { border-left: 3px solid #d0d7de; padding-left: 11px; }
+  pre.code { background: #f6f8fa; border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; font-family: var(--mono); font-size: 11.5px; margin: 0; overflow-x: auto; }
+  .premasked { font-family: var(--mono); }
+  .row4 { display: flex; gap: 10px; font-family: var(--mono); font-size: 12.5px; }
+  .row4 > span { flex: 1 1 0; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .kpi { font-size: 24px; font-weight: 700; letter-spacing: -.5px; }
+  .chip { display: inline-block; border: 1px solid #d0d7de; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; margin: 2px; }
+  .modal { border: 1px solid #dcdfe6; border-radius: 8px; box-shadow: 0 8px 24px rgba(15,23,42,.12); padding: 12px 14px; max-width: 330px; }
+  .tip { display: inline-block; position: relative; }
+  .tip .tipbox { position: absolute; bottom: 100%; left: 0; background: #0f172a; color: #fff; padding: 5px 9px; border-radius: 5px; font-size: 11px; white-space: nowrap; }
+  input.f, textarea.f, select.f { width: 100%; padding: 6px 9px; border: 1px solid #dcdfe6; border-radius: 5px; font: 12.5px inherit; font-family: inherit; margin-bottom: 6px; }
+  .attr-line { font-size: 11.5px; color: var(--ink2); margin-top: 6px; }
+  canvas { border: 1px solid var(--line); border-radius: 6px; background: #fff; max-width: 100%; }
+  svg.chart { border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  iframe.mini { width: 100%; height: 74px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .fake-img { border: 1px dashed #cbd5e1; border-radius: 6px; padding: 9px 11px; font-size: 11.5px; color: var(--ink2); background: repeating-linear-gradient(45deg,#fafafa,#fafafa 8px,#f1f5f9 8px,#f1f5f9 16px); }
+
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 760px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: #fcfcfd; }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 11.5px; color: var(--ink3); }
+  .stat.ok .n { color: var(--green); }
+  .stat.bad .n { color: var(--red); }
+  .stat.blue .n { color: var(--blue); }
+  #deviation-list { font-size: 12px; color: var(--red); margin: 10px 0 0; padding-left: 18px; }
+  #deviation-list li { margin-bottom: 3px; }
+  .checklist td:first-child { width: 32px; }
+  .checklist input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; }
+  .checklist tr.done td { color: var(--ink3); text-decoration: line-through; }
+  footer { margin-top: 32px; color: var(--ink3); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="topbar" data-mg-skip>
+  <div class="topbar-in">
+    <div class="brand"><i></i>MaskGuard 形态覆盖矩阵</div>
+    <nav>
+      <a href="#basis">调研依据</a><a href="#matrix">矩阵总览</a><a href="#a">A 组件形态</a>
+      <a href="#b">B 非文本载体</a><a href="#c">C 时序行为</a><a href="#pick">手动指定</a>
+      <a href="#result">自检结果</a><a href="#check">验收清单</a>
+    </nav>
+    <div class="status" id="tp-status"><span id="tp-status-text">正在检测…</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero" data-mg-skip>
+    <h1>真实数据展现形态 · 脱敏能力覆盖矩阵</h1>
+    <p>本页不是「照着插件能力摆出来的靶子」。它按市面上真实系统渲染敏感数据的方式分区：中后台组件、Canvas 在线表格、图表、PDF、富文本、Shadow DOM、iframe、属性承载、框架重渲染等。每个形态都标注了<b>预期结果</b>（应遮盖 / 应保持原样 / 结构性不可达），页面自检每 1.5 秒比对实测值，把「不符合预期」的形态单独列出来。所有测试数据均为虚构。</p>
+  </header>
+
+  <!-- 调研依据 -->
+  <section id="basis">
+    <div class="card" data-mg-skip>
+      <div class="card-head"><h2>一、形态来源（本轮调研依据）</h2><p class="sub">按真实产品 / 组件库 / 框架实现归类，而非按插件功能倒推</p></div>
+      <div class="card-body">
+        <div class="scroll">
+          <table>
+            <thead><tr><th style="width:130px">来源类别</th><th style="width:280px">真实产品 / 组件</th><th>敏感数据的承载位置</th><th style="width:110px">对插件的意义</th></tr></thead>
+            <tbody>
+              <tr><td>中后台组件库</td><td>Element Plus <code>el-descriptions</code> / <code>el-table</code>、Ant Design Vue <code>a-table</code> / ProTable、PrimeVue DataTable</td><td>label-value 分离的 DOM 文本；表格单元格 <code>.cell</code>；固定列会克隆一份 DOM；formatter 会把值拆成多个 span</td><td><span class="tag mask">多数可遮</span></td></tr>
+              <tr><td>虚拟滚动 / 分页</td><td>AG Grid 虚拟 DOM、a-table 虚拟滚动、无限滚动列表</td><td>只渲染视口行，滚动时动态增删文本节点</td><td><span class="tag mask">依赖增量监听</span></td></tr>
+              <tr><td>在线表格 / 文档</td><td>腾讯文档 Sheet、飞书/钉钉表格、Google Sheets、Luckysheet、AntV S2、SpreadJS</td><td>由 DOM 迁移到 <b>Canvas</b> 绘制单元格文字，无文本节点</td><td><span class="tag na">不可达</span></td></tr>
+              <tr><td>图表可视化</td><td>ECharts（Canvas / SVG 双渲染器）、AntV G2、数据大屏 KPI</td><td>Canvas 像素；SVG <code>&lt;text&gt;</code>；DOM 覆层 tooltip</td><td><span class="tag na">部分可达</span></td></tr>
+              <tr><td>PDF / 预览</td><td>PDF.js textLayer、html2canvas 导出、iframe srcdoc 预览</td><td>文本层是 span（可遮）；图层是 canvas（不可遮）</td><td><span class="tag keep">分层</span></td></tr>
+              <tr><td>客服 / CRM / IM</td><td>Zendesk 工单、WhatsApp Web 聊天、Salesforce / Zoho CRM 字段掩码、呼叫中心坐席</td><td>客户资料卡、会话气泡、工单线程、附件名、时间线</td><td><span class="tag mask">主战场</span></td></tr>
+              <tr><td>富文本 / 编辑器</td><td>TinyMCE、wangEditor、CodeMirror 6、Monaco、Google Docs 类 L2 编辑器</td><td>contenteditable DOM、内部 iframe、隐藏 textarea、自绘 Canvas</td><td><span class="tag na">多数不可达</span></td></tr>
+              <tr><td>属性 / 伪元素</td><td>CSS <code>content: attr()</code>、ARIA、session replay 采集清单</td><td>placeholder / title / alt / aria-label / data-* / href / src / value</td><td><span class="tag keep">展示类按需可达</span></td></tr>
+              <tr><td>Web Components</td><td>Shadow DOM（open / closed）、slot 分配</td><td>shadow root 独立树，主文档 TreeWalker 遍历不到</td><td><span class="tag mask">open 可达</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note blue" id="tp-protocol-note" style="margin-top:14px;margin-bottom:0"><b>打开方式</b>：推荐在 <code>maskguard</code> 目录执行 <code>node serve-test-page.js</code>，访问 <code>http://127.0.0.1:8765/test-page.html</code>。直接双击（<code>file://</code>）需在扩展详情开启「允许访问文件网址」。可选：面板「导入 JSON」加载 <code>test-config.json</code>（20 条规则，含 14 条正则覆盖 7 种算法 + 4 条位置规则 + 2 条视觉模糊；会覆盖现有规则，建议先导出备份）。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 矩阵总览 -->
+  <section id="matrix">
+    <div class="card" data-mg-skip>
+      <div class="card-head"><h2>二、矩阵总览与判定口径</h2><p class="sub">「应保持原样」同样是合格结果 —— 测试的是行为是否符合预期，不是遮盖数量</p></div>
+      <div class="card-body">
+        <div class="scroll">
+          <table>
+            <thead><tr><th style="width:90px">分组</th><th style="width:250px">形态</th><th style="width:110px">预期</th><th>判定依据</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="4"><b>A · DOM 文本</b></td><td>详情页 / 表格 / 列表 / 气泡 / 日志 / JSON 树 / 弹窗 / 附件名 / 富文本</td><td><span class="tag mask">应遮盖</span></td><td>文本节点被替换，原文整串不再出现在 textContent</td></tr>
+              <tr><td>业务系统已掩码、超长文本、noscript / template / JSON-LD、可编辑区</td><td><span class="tag keep">保持原样</span></td><td>按设计不命中或主动跳过，textContent 仍含原文</td></tr>
+              <tr><td>跨标签拆分、Shadow DOM（open root）</td><td><span class="tag mask">应遮盖</span></td><td><b>v1.1 增强</b>：跨节点拼接匹配 + 递归遍历 shadow root；关闭对应开关后应保持原样</td></tr>
+              <tr><td>SVG 图表标签</td><td><span class="tag keep">保持原样</span></td><td>默认跳过 SVG 以免破坏图表；开启高级页「SVG 文字」后应变为遮盖</td></tr>
+              <tr><td>同源 iframe（srcdoc / about:blank）</td><td><span class="tag mask">应遮盖</span></td><td><code>all_frames=true</code> + <code>match_about_blank=true</code> 应注入子帧；实测不符即为缺陷</td></tr>
+              <tr><td rowspan="2"><b>B · 非文本载体</b></td><td>input.value / textarea / select、data-* / href / src、JS 内存、导出文件、剪贴板</td><td><span class="tag na">结构性不可达</span></td><td>坚决不改：改了会破坏表单提交、导航与业务逻辑。需后端脱敏 / 网络层拦截</td></tr>
+              <tr><td>placeholder / title / alt / aria-label、document.title、CSS 伪元素、Canvas、图片内文字</td><td><span class="tag na">默认不可达</span></td><td>前两类可在高级页开启「属性 / 标题遮盖」；Canvas 与图片请用位置规则 + <b>视觉模糊</b>算法整块遮盖</td></tr>
+              <tr><td><b>C · 时序行为</b></td><td>AJAX 延迟渲染、SPA 刷新、框架受控重渲染、轮询、骨架屏替换、200 行批量插入、无限滚动</td><td><span class="tag mask">应遮盖</span></td><td>点按钮触发后，600ms 内探针文字应被替换</td></tr>
+              <tr><td><b>D · 手动指定</b></td><td>位置规则 / 框选 / 右键 / 选中文本</td><td><span class="tag mask">按配置</span></td><td>只遮指定容器，字段名与相邻区域不受影响</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint"><b>探针机制</b>：每个形态自带 <code>data-raw</code>（原文，存在属性里不会被改）与 <code>data-probe</code>（读取用户实际能看到/读到的值的函数）。自检比对两者，再与 <code>data-expect</code> 比对。说明区、矩阵表、按钮、代码一律标 <code>data-mg-skip</code>，避免自身被遮导致误判。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- A 组 -->
+  <section id="a">
+    <div class="card">
+      <div class="card-head" data-mg-skip><h2>三、A 组 · 真实业务组件形态（DOM 文本节点）</h2><p class="sub">类名与结构按 Element Plus / Ant Design / 工单系统 / PDF.js 等真实渲染结果模拟</p></div>
+      <div class="card-body">
+        <div class="shape-grid">
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A01</span><span class="nm">CRM 客户详情页</span><span class="tag mask">应遮盖</span><span class="src">el-descriptions / Zoho CRM</span></div>
+            <div class="shape-body" data-shape="A01" data-expect="mask" data-raw="13800138000" data-probe="A01">
+              <div class="ed">
+                <div class="ed-row"><div class="ed-label">客户名称</div><div class="ed-value">太原华创科技有限公司</div></div>
+                <div class="ed-row"><div class="ed-label">联系人手机</div><div class="ed-value">13800138000</div></div>
+                <div class="ed-row"><div class="ed-label">证件号码</div><div class="ed-value"><span>110101199001011234</span></div></div>
+              </div>
+            </div>
+            <div class="shape-foot" data-mg-skip>label 与 value 分离；值常被额外包一层 <code>span</code>。手动指定建议 <code>.ed-row:nth-child(2) .ed-value</code>。<span class="verdict" data-v="A01">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A02</span><span class="nm">数据表格 + 固定列克隆</span><span class="tag mask">应遮盖</span><span class="src">el-table / a-table</span></div>
+            <div class="shape-body" data-shape="A02" data-expect="mask" data-raw="13912345678" data-probe="A02">
+              <table class="tbl"><thead><tr><th>订单号</th><th>客户</th><th>手机号</th><th>金额</th></tr></thead>
+                <tbody>
+                  <tr><td>SO-001</td><td>山西信达信息</td><td class="el-table__cell">13912345678</td><td>¥860,000.00</td></tr>
+                  <tr><td>SO-002</td><td>河北金租</td><td class="el-table__cell">13700137000</td><td>¥2,450,000.00</td></tr>
+                </tbody></table>
+              <div style="margin-top:7px;font-size:11px;color:#909399">固定列克隆副本 ↓</div>
+              <div class="clone-cell" style="font-family:var(--mono);font-size:12px">13912345678</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>固定列会克隆同一份 DOM，两处都需遮盖。整列规则 <code>.tbl td:nth-child(3)</code>。<span class="verdict" data-v="A02">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A03</span><span class="nm">会话消息气泡</span><span class="tag mask">应遮盖</span><span class="src">WhatsApp Web / Zendesk 工单</span></div>
+            <div class="shape-body" data-shape="A03" data-expect="mask" data-raw="13800138000" data-probe="A03">
+              <div class="bubble in">您好，预留手机号是 13800138000，请核对。</div><br>
+              <div class="bubble">收到，备用邮箱 zhangsan@example.com</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>客服/IM 场景最常见的泄露点：正文里自由文本夹杂号码与邮箱。<span class="verdict" data-v="A03">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A04</span><span class="nm">工单时间线 / 操作记录</span><span class="tag mask">应遮盖</span><span class="src">Zendesk / OA 工单</span></div>
+            <div class="shape-body" data-shape="A04" data-expect="mask" data-raw="110101199001011234" data-probe="A04">
+              <div class="tl">
+                <div class="tl-item"><b>10:24</b> 坐席创建工单，证件号 110101199001011234</div>
+                <div class="tl-item"><b>10:31</b> 回访 13912345678，客户确认</div>
+              </div>
+            </div>
+            <div class="shape-foot" data-mg-skip>时间线与正文同处一个文本节点，属于容易误伤的场景。<span class="verdict" data-v="A04">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A05</span><span class="nm">日志控制台 / 审计日志</span><span class="tag mask">应遮盖</span><span class="src">pre 逐行输出</span></div>
+            <div class="shape-body" data-shape="A05" data-expect="mask" data-raw="13800138000" data-probe="A05">
+              <pre class="log">[INFO] login user=zhangsan phone=13800138000
+[INFO] request /api/v1/user id=110101199001011234
+[WARN] token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMTAxMDEifQ.8xKp9sT2vQ4nLmR7cW1ZaA</pre>
+            </div>
+            <div class="shape-foot" data-mg-skip><code>pre</code> 不在默认跳过列表，日志里的手机号/证件号/Token 会被识别。<span class="verdict" data-v="A05">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A06</span><span class="nm">接口响应 JSON 树预览</span><span class="tag mask">应遮盖</span><span class="src">Swagger / 抓包面板 / 低代码调试器</span></div>
+            <div class="shape-body" data-shape="A06" data-expect="mask" data-raw="6222021234567890123" data-probe="A06">
+              <div class="json">{<br>&nbsp;&nbsp;<span class="k">"accountNo"</span>: <span class="json-str str">"6222021234567890123"</span>,<br>&nbsp;&nbsp;<span class="k">"mobile"</span>: <span class="str">"13800138000"</span>,<br>&nbsp;&nbsp;<span class="k">"balance"</span>: <span class="num">1280000.00</span><br>}</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>语法高亮把键与值拆成不同 span，但值本身仍是完整文本节点。<span class="verdict" data-v="A06">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A07</span><span class="nm">附件名 / 文件名含证件号</span><span class="tag mask">应遮盖</span><span class="src">工单附件 / 网盘列表</span></div>
+            <div class="shape-body" data-shape="A07" data-expect="mask" data-raw="110101199001011234" data-probe="A07">
+              <div class="file-name">📎 客户身份证扫描件_110101199001011234_张三.pdf</div>
+              <div class="file-name">📎 回款凭证_6222021234567890123.xlsx</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>文件名是最容易被忽略的泄露点，也是 session replay / DLP 的重点。<span class="verdict" data-v="A07">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A08</span><span class="nm">富文本渲染（Markdown → HTML）</span><span class="tag mask">应遮盖</span><span class="src">wiki / 工单正文 / 邮件</span></div>
+            <div class="shape-body" data-shape="A08" data-expect="mask" data-raw="13800138000" data-probe="A08">
+              <div class="md">客户联系人：<b>张三</b>，电话 <strong class="md-strong">13800138000</strong>，地址 山西省太原市小店区平阳路 88 号。</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>值被 <code>strong</code> 单独包裹时仍是完整文本节点，可正常识别。<span class="verdict" data-v="A08">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A09</span><span class="nm">PDF.js 文本层（textLayer）</span><span class="tag mask">应遮盖</span><span class="src">PDF.js / 在线预览</span></div>
+            <div class="shape-body" data-shape="A09" data-expect="mask" data-raw="110101199001011234" data-probe="A09">
+              <div style="border:1px solid #e5e7eb;border-radius:6px;padding:9px;background:#fff">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:5px">PDF 预览 · 第 1 页（canvas 图层 + 文本层叠加）</div>
+                <div class="textLayer" style="font-family:var(--mono);font-size:12px"><span>申请人证件号：110101199001011234</span></div>
+              </div>
+            </div>
+            <div class="shape-foot" data-mg-skip>文本层是 span（可遮），底层 canvas 图像仍含原文 —— 属于「部分可遮」。<span class="verdict" data-v="A09">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A10</span><span class="nm">KPI 数字 / 标签 / 面包屑</span><span class="tag mask">应遮盖</span><span class="src">数据大屏 / 报表卡片</span></div>
+            <div class="shape-body" data-shape="A10" data-expect="mask" data-raw="13800138000" data-probe="A10">
+              <div style="font-size:11.5px;color:#64748b">本月回款客户代表</div>
+              <div class="kpi">13800138000</div>
+              <span class="chip">客户 110101199001011234</span><span class="chip">zhangsan@example.com</span>
+            </div>
+            <div class="shape-foot" data-mg-skip>短文本、大字号、标签内文本，都是常规 TreeWalker 可覆盖范围。<span class="verdict" data-v="A10">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A11</span><span class="nm">同源 iframe（邮件正文 / TinyMCE）</span><span class="tag mask">应遮盖</span><span class="src">iframe srcdoc / 编辑器内嵌文档</span></div>
+            <div class="shape-body" data-shape="A11" data-expect="mask" data-raw="13800138000" data-probe="A11">
+              <iframe class="mini" id="mail-frame" title="邮件正文" srcdoc="&lt;div style='font:13px sans-serif;padding:8px'&gt;尊敬的客户，您的预留手机 13800138000，证件号 110101199001011234。&lt;/div&gt;"></iframe>
+            </div>
+            <div class="shape-foot" data-mg-skip>清单 <code>all_frames=true</code> 应向子帧注入。若实测未遮，说明 srcdoc 未命中 matches，属真实缺陷。<span class="verdict" data-v="A11">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A12</span><span class="nm">跨标签拆分（formatter / 语法高亮）</span><span class="tag mask">应遮盖</span><span class="src">表格 formatter / 代码高亮</span></div>
+            <div class="shape-body" data-shape="A12" data-expect="mask" data-raw="13800138000" data-probe="A12">
+              <div style="font-family:var(--mono);font-size:13px">138<span style="color:#7c3aed">00</span>138000</div>
+              <div style="font-size:11px;color:#64748b;margin-top:6px">↑ 同一个手机号被拆进 3 个文本节点</div>
+            </div>
+            <div class="shape-foot" data-mg-skip><b>v1.1 增强</b>：跨相邻内联文本节点拼接后匹配（块级元素为硬边界，不跨字段）。关闭高级页「跨标签拼接识别」后应保持原样。<span class="verdict" data-v="A12">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A13</span><span class="nm">SVG 图表标签（ECharts SVG 渲染器）</span><span class="tag keep">保持原样</span><span class="src">ECharts / AntV G2</span></div>
+            <div class="shape-body" data-shape="A13" data-expect="keep" data-raw="13800138000" data-probe="A13">
+              <svg class="chart" width="100%" height="66" viewBox="0 0 330 66"><rect x="10" y="12" width="180" height="18" fill="#dbeafe"></rect><text x="12" y="26" font-size="11">13800138000</text><rect x="10" y="38" width="120" height="18" fill="#dcfce7"></rect><text x="12" y="52" font-size="11">13912345678</text></svg>
+            </div>
+            <div class="shape-foot" data-mg-skip>默认 <code>skipSelectors</code> 含 <code>svg</code>，避免破坏图表；可在高级设置移除后重测。<span class="verdict" data-v="A13">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A14</span><span class="nm">Shadow DOM（Web Component）</span><span class="tag mask">应遮盖</span><span class="src">Web Components / 微前端</span></div>
+            <div class="shape-body" data-shape="A14" data-expect="mask" data-raw="13800138000" data-probe="A14">
+              <div id="wc-host" style="font-size:12.5px;color:#334155">↓ 组件内部（shadow root）</div>
+            </div>
+            <div class="shape-foot" data-mg-skip><b>v1.1 增强</b>：递归收集 open shadow root 的文本节点并单独监听其变化。<code>closed</code> root 仍不可达。<span class="verdict" data-v="A14">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A15</span><span class="nm">业务系统已掩码字段</span><span class="tag keep">保持原样</span><span class="src">Zoho CRM / 动态脱敏网关</span></div>
+            <div class="shape-body" data-shape="A15" data-expect="keep" data-raw="138****8000" data-probe="A15">
+              <div class="premasked">联系人手机：138****8000</div>
+              <div class="premasked">证件号：110101********1234</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>后端/业务侧已掩码的值不应被二次破坏，正则不应命中。<span class="verdict" data-v="A15">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A16</span><span class="nm">template / noscript / JSON-LD</span><span class="tag keep">保持原样</span><span class="src">前端模板 / SEO 结构化数据</span></div>
+            <div class="shape-body" data-shape="A16" data-expect="keep" data-raw="13800138000" data-probe="A16">
+              <template id="row-template"><div>模板行：13800138000</div></template>
+              <noscript>无脚本时显示：13800138000</noscript>
+              <pre class="code" style="margin-top:6px;font-size:11px">application/ld+json · {"telephone":"13800138000"}</pre>
+            </div>
+            <div class="shape-foot" data-mg-skip><code>template.content</code> 是独立 fragment、<code>noscript</code>/<code>script</code> 在跳过列表，均不应改动。<span class="verdict" data-v="A16">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A17</span><span class="nm">单文本节点超长内容</span><span class="tag keep">保持原样</span><span class="src">长日志 / 大段正文</span></div>
+            <div class="shape-body" data-shape="A17" data-expect="keep" data-raw="13800138000" data-probe="A17">
+              <div class="long-text" style="max-height:52px;overflow:hidden;font-size:11.5px;color:#475569;word-break:break-all"></div>
+            </div>
+            <div class="shape-foot" data-mg-skip>超过 <code>maxTextLength=8000</code> 时整段跳过，防止 ReDoS 与卡顿；可在高级设置调大。<span class="verdict" data-v="A17">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A18</span><span class="nm">可编辑区 / 代码高亮块</span><span class="tag keep">保持原样</span><span class="src">contenteditable / Prism</span></div>
+            <div class="shape-body" data-shape="A18" data-expect="keep" data-raw="13800138000" data-probe="A18">
+              <div contenteditable="true" style="border:1px dashed #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px">可编辑备注：13800138000</div>
+            </div>
+            <div class="shape-foot" data-mg-skip><code>[contenteditable=true]</code> 默认跳过，避免破坏编辑器 model 与撤销栈。<span class="verdict" data-v="A18">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">A19</span><span class="nm">同行多字段相邻（手机 / 证件 / 邮箱）</span><span class="tag mask">应遮盖</span><span class="src">CRM 列表 / 台账表格</span></div>
+            <div class="shape-body" data-shape="A19" data-expect="mask" data-raw="客户0|13800138000|110101199001011000|user0@example.com" data-probe="A19">
+              <div class="row4" id="a19-row"><span class="c1">客户0</span><span class="c2">13800138000</span><span class="c3">110101199001011000</span><span class="c4">user0@example.com</span></div>
+            </div>
+            <div class="shape-foot" data-mg-skip><b>缺陷回归点</b>：跨标签拼接不能把相邻单元格当成同一个值，否则邮箱类的贪婪前缀会吞掉左边数字，整行塌进第一格。探针同时校验「每格都有内容且第一格仍是客户名」。<span class="verdict" data-v="A19">—</span></div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B 组 -->
+  <section id="b">
+    <div class="card">
+      <div class="card-head" data-mg-skip><h2>四、B 组 · 非文本节点载体（结构性不可达）</h2><p class="sub">默认配置下探针验证这些值确实未被改动；带开关的项可在高级页开启后重测，Canvas / 图片请用「视觉模糊」位置规则</p></div>
+      <div class="card-body">
+        <div class="shape-grid">
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B01</span><span class="nm">表单 value / textarea / select</span><span class="tag na">不可达</span><span class="src">所有业务系统</span></div>
+            <div class="shape-body" data-shape="B01" data-expect="keep" data-raw="13800138000" data-probe="B01">
+              <input class="f" id="b01-input" type="text" value="13800138000">
+              <textarea class="f" id="b01-area">备注：110101199001011234</textarea>
+              <select class="f"><option>6222021234567890123</option></select>
+            </div>
+            <div class="shape-foot" data-mg-skip>值是属性 / 表单状态，不是文本节点；改了还会破坏提交。需后端或业务侧掩码。<span class="verdict" data-v="B01">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B02</span><span class="nm">属性承载：placeholder / title / alt / aria-label / data-*</span><span class="tag na">不可达</span><span class="src">ARIA / session replay 采集清单</span></div>
+            <div class="shape-body" data-shape="B02" data-expect="keep" data-raw="13800138000" data-probe="B02">
+              <input class="f" id="b02-input" placeholder="备用手机 13800138000" title="联系人 13800138000" aria-label="联系人 13800138000" data-phone="13800138000" value="">
+              <div class="attr-line">↑ hover / 读屏 / DevTools 均能看到原文；插件只改文本节点。</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>session replay 类工具会专门掩码这些属性；本插件不涉及。<span class="verdict" data-v="B02">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B03</span><span class="nm">CSS 伪元素 content: attr()</span><span class="tag na">不可达</span><span class="src">CSS generated content</span></div>
+            <div class="shape-body" data-shape="B03" data-expect="keep" data-raw="13800138000" data-probe="B03">
+              <div class="pseudo" data-phone="13800138000" style="font-size:12.5px">徽标渲染的号码 →</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>伪元素不在 DOM 树中，<code>getComputedStyle(el,'::after').content</code> 仍是原文。<span class="verdict" data-v="B03">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B04</span><span class="nm">Canvas 在线表格单元格</span><span class="tag na">不可达</span><span class="src">腾讯文档 / 飞书表格 / Sheets / S2 / Luckysheet</span></div>
+            <div class="shape-body" data-shape="B04" data-expect="keep" data-raw="13800138000" data-probe="B04">
+              <canvas id="b04-canvas" width="330" height="66"></canvas>
+            </div>
+            <div class="shape-foot" data-mg-skip>文字由 <code>fillText</code> 绘制成像素，页面里没有任何文本节点。启用 <code>test-config.json</code> 的 <code>test_blur_canvas</code> 位置规则可整块模糊。<span class="verdict" data-v="B04">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B05</span><span class="nm">Canvas 图表标签 / 大屏</span><span class="tag na">不可达</span><span class="src">ECharts Canvas 渲染器</span></div>
+            <div class="shape-body" data-shape="B05" data-expect="keep" data-raw="13912345678" data-probe="B05">
+              <canvas id="b05-canvas" width="330" height="66"></canvas>
+            </div>
+            <div class="shape-foot" data-mg-skip>ECharts 默认 Canvas；切到 SVG 渲染器后才有 <code>&lt;text&gt;</code>（见 A13）。<span class="verdict" data-v="B05">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B06</span><span class="nm">图片 / 扫描件 / 截图内的文字</span><span class="tag na">不可达</span><span class="src">身份证扫描件 / 附件预览</span></div>
+            <div class="shape-body" data-shape="B06" data-expect="keep" data-raw="110101199001011234" data-probe="B06">
+              <img id="b06-img" class="scan-img" alt="证件扫描件" style="display:block;width:100%;max-width:340px;height:62px;border:1px dashed #cbd5e1;border-radius:6px">
+              <div style="font-size:11px;color:#64748b;margin-top:6px" data-mg-skip>↑ 文字绘制在图片像素里，DOM 中不存在该文本节点</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>只有 OCR / 服务端脱敏能识别；启用 <code>test_blur_image</code> 位置规则可整块模糊图片容器。<span class="verdict" data-v="B06">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B07</span><span class="nm">页面标题 / 地址栏 query</span><span class="tag na">不可达</span><span class="src">document.title / URL</span></div>
+            <div class="shape-body" data-shape="B07" data-expect="keep" data-raw="13800138000" data-probe="B07">
+              <div style="font-size:12px;color:#475569">标签页标题：<code>CRM-13800138000</code>　·　URL：<code>?phone=13800138000</code></div>
+            </div>
+            <div class="shape-foot" data-mg-skip>浏览器 UI 与 URL 不在页面 DOM 内，插件无法修改。<span class="verdict" data-v="B07">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B08</span><span class="nm">JS 内存 / 网络响应 / console</span><span class="tag na">不可达</span><span class="src">React state / Vuex / fetch 响应</span></div>
+            <div class="shape-body" data-shape="B08" data-expect="keep" data-raw="13800138000" data-probe="B08">
+              <div style="font-size:12px;color:#475569">模拟 <code>window.__rawResponse = { phone: "13800138000" }</code>；DevTools Network / Console 里仍是原文。</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>本插件只改显示层，不拦截请求、不清理内存变量；导出/接口侧需后端脱敏。<span class="verdict" data-v="B08">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B09</span><span class="nm">下载导出文件 / 剪贴板</span><span class="tag na">部分可达</span><span class="src">CSV / Excel 导出</span></div>
+            <div class="shape-body" data-shape="B09" data-expect="keep" data-raw="13800138000" data-probe="B09">
+              <div class="btn-row" style="margin-bottom:8px"><button class="btn small" id="btn-export">生成导出内容</button><button class="btn small" id="btn-copy-demo">复制 DOM 文本</button></div>
+              <div style="font-size:11.5px;color:#475569">导出内容存于 Blob/内存：<code id="b09-out">（未生成）</code></div>
+            </div>
+            <div class="shape-foot" data-mg-skip>复制已被遮盖的 DOM 文本会拿到遮盖值（附带收益）；但导出文件与 input.value 仍是原文。<span class="verdict" data-v="B09">—</span></div>
+          </article>
+
+          <article class="shape">
+            <div class="shape-head" data-mg-skip><span class="no">B10</span><span class="nm">无障碍树 / 读屏器文本</span><span class="tag na">不可达</span><span class="src">aria-label / aria-valuetext</span></div>
+            <div class="shape-body" data-shape="B10" data-expect="keep" data-raw="13800138000" data-probe="B10">
+              <div role="textbox" aria-label="客户手机 13800138000" aria-valuetext="13800138000" style="border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;font-size:12px">读屏器会朗读原始号码</div>
+            </div>
+            <div class="shape-foot" data-mg-skip>视觉遮盖不等于无障碍层脱敏，合规场景需单独处理。<span class="verdict" data-v="B10">—</span></div>
+          </article>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C 组 -->
+  <section id="c">
+    <div class="card">
+      <div class="card-head" data-mg-skip><h2>五、C 组 · 时序与框架行为（点击触发）</h2><p class="sub">模拟真实 SPA 的数据到达方式；未触发的项不计入自检，触发后应在 600ms 内被遮盖</p></div>
+      <div class="card-body">
+        <div class="btn-row" data-mg-skip style="margin-bottom:14px">
+          <button class="btn primary" data-trigger="C01">AJAX 延迟渲染</button>
+          <button class="btn" data-trigger="C02">SPA 列表刷新</button>
+          <button class="btn" data-trigger="C03">框架受控重渲染（写回原文）</button>
+          <button class="btn" data-trigger="C04">轮询 / WebSocket 推送</button>
+          <button class="btn" data-trigger="C05">骨架屏替换</button>
+          <button class="btn" data-trigger="C06">批量插入 200 行</button>
+          <button class="btn" data-trigger="C07">无限滚动追加</button>
+          <button class="btn" data-trigger="C08">嵌套多文本节点插入</button>
+          <button class="btn" id="btn-clear">清空</button>
+        </div>
+        <div class="note amber" data-mg-skip><b>C03 是真实系统最危险的场景</b>：React/Vue 受控组件重新渲染时会把 <code>nodeValue</code> 写回原文，插件必须靠 MutationObserver 重新遮盖；若出现反复闪烁或漏遮，就是核心缺陷。</div>
+        <div class="shape-grid">
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C01</span><span class="nm">异步接口返回</span><span class="tag mask">应遮盖</span><span class="src">fetch → setState</span></div><div class="shape-body c-body" data-shape="C01" data-expect="mask" data-raw="13800138000" data-probe="C01" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>延迟 800ms 插入文本，检验 MutationObserver 常驻监听。<span class="verdict" data-v="C01">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C02</span><span class="nm">SPA 路由 / 列表刷新</span><span class="tag mask">应遮盖</span><span class="src">Vue Router / React Router</span></div><div class="shape-body c-body" data-shape="C02" data-expect="mask" data-raw="13912345678" data-probe="C02" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>清空容器后一次性插入 20 行，模拟路由切换后的重建。<span class="verdict" data-v="C02">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C03</span><span class="nm">框架重渲染写回原文</span><span class="tag mask">应遮盖</span><span class="src">React reconciliation</span></div><div class="shape-body c-body" data-shape="C03" data-expect="mask" data-raw="13800138000" data-probe="C03" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>先渲染 → 再写回原文 → 观察插件是否重新遮盖（不闪烁、不漏）。<span class="verdict" data-v="C03">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C04</span><span class="nm">定时轮询 / 消息推送</span><span class="tag mask">应遮盖</span><span class="src">setInterval / WebSocket</span></div><div class="shape-body c-body" data-shape="C04" data-expect="mask" data-raw="13700137000" data-probe="C04" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>连续 3 次推送，每次都应被遮盖。<span class="verdict" data-v="C04">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C05</span><span class="nm">骨架屏 → 真实数据</span><span class="tag mask">应遮盖</span><span class="src">Skeleton 占位替换</span></div><div class="shape-body c-body" data-shape="C05" data-expect="mask" data-raw="110101199001011234" data-probe="C05" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>占位节点被真实数据节点替换，检验 childList 全量重扫。<span class="verdict" data-v="C05">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C06</span><span class="nm">200 行批量插入 / 防抖</span><span class="tag mask">应遮盖</span><span class="src">大量数据列表</span></div><div class="shape-body c-body" data-shape="C06" data-expect="mask" data-raw="13600136000" data-probe="C06" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>验证高频 DOM 变化下 600ms 硬上限必然触发扫描。<span class="verdict" data-v="C06">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C07</span><span class="nm">无限滚动追加</span><span class="tag mask">应遮盖</span><span class="src">IntersectionObserver</span></div><div class="shape-body c-body" data-shape="C07" data-expect="mask" data-raw="13500135000" data-probe="C07" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>追加已存在容器末尾，检验增量而非全量路径。<span class="verdict" data-v="C07">待触发</span></div></article>
+          <article class="shape"><div class="shape-head" data-mg-skip><span class="no">C08</span><span class="nm">嵌套多文本节点插入</span><span class="tag mask">应遮盖</span><span class="src">组件树一次性挂载</span></div><div class="shape-body c-body" data-shape="C08" data-expect="mask" data-raw="13800138000" data-probe="C08" data-dynamic="1" style="min-height:40px;color:#94a3b8;font-size:12px">待触发…</div><div class="shape-foot" data-mg-skip>历史缺陷回归点：插入含多个子元素的容器时不能漏遮。<span class="verdict" data-v="C08">待触发</span></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 手动指定 -->
+  <section id="pick">
+    <div class="card">
+      <div class="card-head" data-mg-skip><h2>六、D 组 · 手动指定位置（真实组件选择器）</h2><p class="sub">在真实结构里验证框选 / 右键 / 位置规则的粒度</p></div>
+      <div class="card-body">
+        <div class="scroll" data-mg-skip>
+          <table>
+            <thead><tr><th style="width:300px">选择器</th><th style="width:190px">对应真实结构</th><th>影响范围与注意点</th><th style="width:60px">操作</th></tr></thead>
+            <tbody>
+              <tr><td><code>.ed-row:nth-child(2) .ed-value</code></td><td>el-descriptions 某一行</td><td>只遮手机号值，label「联系人手机」保留</td><td><button class="btn small" data-copy=".ed-row:nth-child(2) .ed-value">复制</button></td></tr>
+              <tr><td><code>.tbl td:nth-child(3)</code></td><td>el-table 整列</td><td>遮手机号列；固定列克隆需另加 <code>.clone-cell</code></td><td><button class="btn small" data-copy=".tbl td:nth-child(3)">复制</button></td></tr>
+              <tr><td><code>.clone-cell</code></td><td>固定列克隆副本</td><td>表格固定列常见陷阱：不加这条会漏一处</td><td><button class="btn small" data-copy=".clone-cell">复制</button></td></tr>
+              <tr><td><code>.bubble.in</code></td><td>会话气泡</td><td>整条消息遮盖（含普通文字），适合不确定格式的场景</td><td><button class="btn small" data-copy=".bubble.in">复制</button></td></tr>
+              <tr><td><code>.json .json-str</code></td><td>JSON 树值节点</td><td>只遮字符串值，键名与结构保留</td><td><button class="btn small" data-copy=".json .json-str">复制</button></td></tr>
+              <tr><td><code>.file-name</code></td><td>附件名列表</td><td>文件名整条遮盖，避免证件号残留</td><td><button class="btn small" data-copy=".file-name">复制</button></td></tr>
+              <tr><td><code>.textLayer span</code></td><td>PDF.js 文本层</td><td>只遮文本层；canvas 图层仍含原文，见 A09</td><td><button class="btn small" data-copy=".textLayer span">复制</button></td></tr>
+              <tr><td><code>body</code> / <code>*</code> <span class="tag keep">应被拒绝</span></td><td>宽泛选择器保护</td><td>插件应拒绝保存，整页不能变黑条</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint" data-mg-skip>试法：面板「框选页面位置」→ 点 A01 详情页的手机号；或右键该行 →「将此位置加入脱敏」；或选中一段文字右键「脱敏选中的文本」（内存态、不落盘）。按住 <b>Alt</b> 临时查看原文。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 自检结果 -->
+  <section id="result">
+    <div class="card" data-mg-skip>
+      <div class="card-head"><h2>七、自检结果</h2><p class="sub">每 1.5 秒刷新；「偏差」= 实测行为与标注预期不一致的形态</p></div>
+      <div class="card-body">
+        <div class="summary">
+          <div class="stat ok"><div class="n" id="st-pass">0</div><div class="l">符合预期</div></div>
+          <div class="stat bad"><div class="n" id="st-fail">0</div><div class="l">偏差（需排查）</div></div>
+          <div class="stat blue"><div class="n" id="st-na">0</div><div class="l">结构性不可达 B 组</div></div>
+          <div class="stat"><div class="n" id="st-wait">0</div><div class="l">待触发 C 组</div></div>
+        </div>
+        <div id="deviation-list"></div>
+        <div class="note" style="margin:14px 0 0"><b>怎么读结果</b>：A 组「保持原样」与 B 组「不可达」通过，说明插件没有越界改坏东西；A/C 组「应遮盖」通过，说明检测覆盖到位。真正需要处理的是「偏差」列表，以及 B 组清单里业务上确实必须遮、但当前技术路线做不到的场景。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 验收清单 -->
+  <section id="check">
+    <div class="card" data-mg-skip>
+      <div class="card-head"><h2>八、验收清单</h2><p class="sub">勾选仅本次浏览有效</p></div>
+      <div class="card-body">
+        <div class="scroll">
+          <table class="checklist">
+            <thead><tr><th></th><th style="width:280px">动作</th><th>合格标准</th></tr></thead>
+            <tbody>
+              <tr><td><input type="checkbox"></td><td>打开页面看顶部状态灯</td><td>「偏差 0」；若非 0，按第七节列表逐项定位</td></tr>
+              <tr><td><input type="checkbox"></td><td>逐一点 C 组 8 个按钮</td><td>每项在 600ms 内变为「符合」，C03 无闪烁/漏遮</td></tr>
+              <tr><td><input type="checkbox"></td><td>框选 / 右键 / 粘贴选择器</td><td>只遮指定容器，label 与相邻列不受影响；宽泛选择器被拒</td></tr>
+              <tr><td><input type="checkbox"></td><td>导入 test-config.json</td><td>7 种文本算法 + 视觉模糊在 A 组样例上生效，偏差仍为 0</td></tr>
+              <tr><td><input type="checkbox"></td><td>高级页逐项开关验证</td><td>关闭「跨标签拼接」→ A12 变回原文；开启「SVG 文字」→ A13 被遮；开启「属性 / 标题遮盖」→ B02/B03/B07/B10 的属性值被遮（重跑自检应显示偏差，属预期变化）</td></tr>
+              <tr><td><input type="checkbox"></td><td>启用两条视觉模糊位置规则</td><td>Canvas 表格、图表、扫描件容器出现高斯模糊；还原 / 关闭规则后恢复清晰</td></tr>
+              <tr><td><input type="checkbox"></td><td>Alt / 临时还原 / 重新扫描</td><td>原文临时可见、松开恢复；还原后重新扫描再次遮盖</td></tr>
+              <tr><td><input type="checkbox"></td><td>站点黑名单 / 全局开关</td><td>遮盖立即还原，移除后自动恢复</td></tr>
+              <tr><td><input type="checkbox"></td><td>逐项确认 B 组不可达清单</td><td>业务上若必须遮这些位置，明确改用后端脱敏 / 网络层拦截 / 位置规则模糊图片容器</td></tr>
+              <tr><td><input type="checkbox"></td><td>DevTools Network + Elements</td><td>插件零外部请求、不注入内联脚本；原文只在文本节点被替换</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint">配套规则：<code>test-config.json</code>（14 条正则覆盖 7 种算法，4 条停用位置规则）；打开方式：<code>node serve-test-page.js</code> → <code>http://127.0.0.1:8765/test-page.html</code>。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer data-mg-skip>MaskGuard 真实形态覆盖矩阵 · 虚构测试数据 · 单文件零依赖 · 无外部请求</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 探针：读取「用户实际能看到/读到的值」 ---------- */
+  var canvasText = { B04: '', B05: '' };
+  window.__rawResponse = { phone: '13800138000', idcard: '110101199001011234' };
+  var exportText = '13800138000';
+
+  function drawCanvas(id, key, label, value) {
+    var c = document.getElementById(id);
+    if (!c || !c.getContext) return;
+    var g = c.getContext('2d');
+    g.fillStyle = '#f8fafc'; g.fillRect(0, 0, c.width, c.height);
+    g.strokeStyle = '#e2e8f0'; g.lineWidth = 1;
+    for (var x = 0; x < c.width; x += 66) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, c.height); g.stroke(); }
+    for (var y = 0; y < c.height; y += 22) { g.beginPath(); g.moveTo(0, y); g.lineTo(c.width, y); g.stroke(); }
+    g.fillStyle = '#0f172a'; g.font = '12px monospace';
+    g.fillText(label + '  ' + value, 8, 16);
+    g.fillText('客户 13912345678', 8, 38);
+    canvasText[key] = label + '  ' + value + ' | 客户 13912345678';
+  }
+  drawCanvas('b04-canvas', 'B04', '手机号', '13800138000');
+  drawCanvas('b05-canvas', 'B05', '标签', '13912345678');
+
+  /* The scanned-ID sample is a real image resource: its text exists only as
+     pixels / SVG source, never as a DOM text node. */
+  var imageText = '姓名：张三 · 证件号：110101199001011234';
+  (function () {
+    var img = document.getElementById('b06-img');
+    if (!img) return;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="340" height="62">' +
+      '<rect width="100%" height="100%" fill="#f8fafc"/>' +
+      '<text x="10" y="24" font-size="12" font-family="monospace" fill="#334155">姓名：张三</text>' +
+      '<text x="10" y="45" font-size="12" font-family="monospace" fill="#334155">证件号：110101199001011234</text>' +
+      '</svg>';
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  })();
+
+  var host = document.getElementById('wc-host');
+  if (host && host.attachShadow) {
+    var sh = host.attachShadow({ mode: 'open' });
+    sh.innerHTML = '<div style="padding:7px 9px;border:1px solid #cbd5e1;border-radius:6px;font:12.5px monospace">客户手机：13800138000</div>';
+  }
+
+  var longEl = document.querySelector('.long-text');
+  if (longEl) longEl.textContent = '日志正文 '.repeat(1600) + ' 13800138000';
+
+  var PROBES = {
+    A01: function (el) { return el.querySelector('.ed-row:nth-child(2) .ed-value').textContent; },
+    A02: function (el) { return el.querySelector('.el-table__cell').textContent + '|' + el.querySelector('.clone-cell').textContent; },
+    A03: function (el) { return el.querySelector('.bubble.in').textContent; },
+    A04: function (el) { return el.querySelector('.tl-item').textContent; },
+    A05: function (el) { return el.querySelector('.log').textContent; },
+    A06: function (el) { return el.querySelector('.json-str').textContent; },
+    A07: function (el) { return el.querySelector('.file-name').textContent; },
+    A08: function (el) { return el.querySelector('.md-strong').textContent; },
+    A09: function (el) { return el.querySelector('.textLayer span').textContent; },
+    A10: function (el) { return el.querySelector('.kpi').textContent; },
+    A11: function () {
+      var f = document.getElementById('mail-frame');
+      try { return f && f.contentDocument ? f.contentDocument.body.textContent : null; } catch (e) { return null; }
+    },
+    A12: function (el) { return el.querySelector('div').textContent; },
+    A13: function (el) { return el.querySelector('svg text').textContent; },
+    A14: function () { return host && host.shadowRoot ? host.shadowRoot.textContent : null; },
+    A15: function (el) { return el.querySelector('.premasked').textContent; },
+    A16: function (el) { return el.querySelector('template').content.textContent; },
+    A17: function (el) { return el.querySelector('.long-text').textContent; },
+    A18: function (el) { return el.querySelector('[contenteditable]').textContent; },
+    A19: function (el) {
+      var cells = el.querySelectorAll('.row4 > span');
+      var vals = Array.prototype.map.call(cells, function (c) { return c.textContent; });
+      /* Integrity first: a collapsed row (empty cells / name overwritten) must be
+         reported as "unchanged", i.e. as a deviation, not silently accepted. */
+      var intact = vals.length === 4 && vals[0] === '客户0' &&
+        vals.every(function (v) { return v && v.length > 0; });
+      if (!intact) return el.getAttribute('data-raw');
+      return vals.join('|');
+    },
+    B01: function () { return document.getElementById('b01-input').value; },
+    B02: function () {
+      var i = document.getElementById('b02-input');
+      return [i.getAttribute('placeholder'), i.getAttribute('title'), i.getAttribute('aria-label'), i.getAttribute('data-phone')].join('|');
+    },
+    B03: function (el) { return getComputedStyle(el.querySelector('.pseudo'), '::after').content; },
+    B04: function () { return canvasText.B04; },
+    B05: function () { return canvasText.B05; },
+    B06: function () { return imageText; },
+    B07: function () { return document.title + '|' + location.search; },
+    B08: function () { return JSON.stringify(window.__rawResponse); },
+    B09: function () { return exportText; },
+    B10: function (el) { return el.querySelector('[aria-label]').getAttribute('aria-label'); }
+  };
+  ['C01','C02','C03','C04','C05','C06','C07','C08'].forEach(function (id) {
+    PROBES[id] = function (el) { return el.textContent; };
+  });
+
+  /* ---------- 伪元素样式（内容来自属性，DOM 里无文本节点） ---------- */
+  var style = document.createElement('style');
+  style.textContent = '.pseudo::after { content: " " attr(data-phone); color:#b91c1c; font-family:var(--mono); font-weight:700; }';
+  document.head.appendChild(style);
+
+  /* ---------- C 组触发 ---------- */
+  var triggered = {};
+  var shapes = Array.prototype.slice.call(document.querySelectorAll('[data-shape]'));
+  function shapeEl(id) { return shapes.filter(function (s) { return s.getAttribute('data-shape') === id; })[0]; }
+  function setBody(id, html) { var el = shapeEl(id); if (el) el.innerHTML = html; }
+  function p(text) { return '<div style="font:12.5px var(--mono);margin:2px 0">' + text + '</div>'; }
+
+  var TRIGGERS = {
+    C01: function () {
+      var el = shapeEl('C01'); el.textContent = '加载中…';
+      setTimeout(function () { el.innerHTML = p('接口返回：手机 13800138000 / 证件 110101199001011234'); }, 800);
+    },
+    C02: function () {
+      var el = shapeEl('C02'); el.innerHTML = '';
+      var frag = '';
+      for (var i = 0; i < 20; i++) frag += p('SPA 行 ' + (i + 1) + ' · 13912345678 · li' + i + '@corp.com.cn');
+      el.innerHTML = frag;
+    },
+    C03: function () {
+      var el = shapeEl('C03');
+      el.innerHTML = p('受控组件：13800138000');
+      setTimeout(function () {
+        var n = el.querySelector('div');
+        if (n) n.firstChild.nodeValue = '受控组件：13800138000'; // 模拟 React 把原文写回
+      }, 500);
+    },
+    C04: function () {
+      var el = shapeEl('C04'); el.innerHTML = '';
+      var i = 0;
+      var timer = setInterval(function () {
+        el.insertAdjacentHTML('beforeend', p('推送 ' + (++i) + ' · 13700137000'));
+        if (i >= 3) clearInterval(timer);
+      }, 260);
+    },
+    C05: function () {
+      var el = shapeEl('C05');
+      el.innerHTML = '<div class="skeleton" style="height:14px;background:#e2e8f0;border-radius:4px;width:70%"></div>';
+      setTimeout(function () { el.innerHTML = p('骨架替换：证件 110101199001011234 / 手机 13800138000'); }, 400);
+    },
+    C06: function () {
+      var el = shapeEl('C06'); el.innerHTML = '';
+      var frag = '';
+      for (var i = 0; i < 200; i++) frag += p('批量 ' + (i + 1) + ' · 13600136000');
+      el.innerHTML = frag;
+    },
+    C07: function () {
+      var el = shapeEl('C07');
+      if (!el.querySelector('div')) el.innerHTML = '';
+      el.insertAdjacentHTML('beforeend', p('滚动追加 · 13500135000'));
+    },
+    C08: function () {
+      var el = shapeEl('C08');
+      var wrap = document.createElement('div');
+      ['嵌套手机 13800138000', '嵌套证件 110101199001011234', '嵌套邮箱 wangwu@example.com'].forEach(function (t) {
+        var d = document.createElement('div'); d.textContent = t; d.style.font = '12.5px var(--mono)'; wrap.appendChild(d);
+      });
+      el.innerHTML = ''; el.appendChild(wrap);
+    }
+  };
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-trigger]') : null;
+    if (t) {
+      var id = t.getAttribute('data-trigger');
+      triggered[id] = true;
+      TRIGGERS[id]();
+      return;
+    }
+    var cp = e.target.closest ? e.target.closest('[data-copy]') : null;
+    if (cp) copyText(cp.getAttribute('data-copy'), cp);
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', function () {
+    Object.keys(TRIGGERS).forEach(function (id) {
+      var el = shapeEl(id);
+      if (el) el.innerHTML = '待触发…';
+      delete triggered[id];
+    });
+  });
+  document.getElementById('btn-export').addEventListener('click', function () {
+    exportText = 'phone,13800138000\nidcard,110101199001011234';
+    document.getElementById('b09-out').textContent = 'CSV 已生成（原文未脱敏）';
+    flash(document.getElementById('btn-export'), '已生成');
+  });
+  document.getElementById('btn-copy-demo').addEventListener('click', function () {
+    var el = shapeEl('A01');
+    var range = document.createRange();
+    range.selectNodeContents(el.querySelector('.ed-row:nth-child(2) .ed-value'));
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    try { document.execCommand('copy'); } catch (err) {}
+    flash(document.getElementById('btn-copy-demo'), '已复制');
+  });
+
+  function flash(btn, text) { var old = btn.textContent; btn.textContent = text; setTimeout(function () { btn.textContent = old; }, 1100); }
+  function copyText(text, btn) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('data-mg-skip', '');
+      ta.style.cssText = 'position:fixed;opacity:0;left:-9999px';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove(); flash(btn, ok ? '已复制' : '请手动复制');
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { flash(btn, '已复制'); }, fallback);
+    else fallback();
+  }
+
+  /* ---------- 自检 ---------- */
+  function evaluate() {
+    var pass = 0, failed = [], na = 0, wait = 0;
+    shapes.forEach(function (el) {
+      var id = el.getAttribute('data-shape');
+      var raw = el.getAttribute('data-raw');
+      var expect = el.getAttribute('data-expect');
+      var dynamic = el.getAttribute('data-dynamic') === '1';
+      var isB = id.charAt(0) === 'B';
+      var badge = document.querySelector('[data-v="' + id + '"]');
+
+      if (dynamic && !triggered[id]) {
+        wait++;
+        if (badge) { badge.className = 'verdict wait'; badge.textContent = '待触发'; }
+        return;
+      }
+      var now;
+      try { now = PROBES[id] ? PROBES[id](el) : el.textContent; } catch (e) { now = null; }
+      if (now === null || now === undefined) {
+        wait++;
+        if (badge) { badge.className = 'verdict wait'; badge.textContent = '不可读'; }
+        return;
+      }
+      var changed = String(now).indexOf(raw) < 0;
+      var good = expect === 'mask' ? changed : !changed;
+      if (good) pass++; else failed.push(id + '（预期' + (expect === 'mask' ? '遮盖' : '原样') + '，实测' + (changed ? '已遮盖' : '原样') + '）');
+      if (isB) na++;
+      if (badge) { badge.className = 'verdict ' + (good ? 'pass' : 'fail'); badge.textContent = good ? '符合预期' : '偏差'; }
+    });
+
+    document.getElementById('st-pass').textContent = pass;
+    document.getElementById('st-fail').textContent = failed.length;
+    document.getElementById('st-na').textContent = na + '/10';
+    document.getElementById('st-wait').textContent = wait;
+    var list = document.getElementById('deviation-list');
+    list.innerHTML = failed.length ? failed.map(function (f) { return '<li>' + f + '</li>'; }).join('') : '<li style="color:#16a34a;list-style:none;margin-left:-18px">当前无偏差：所有形态的实测行为与标注预期一致。</li>';
+    var st = document.getElementById('tp-status');
+    st.className = 'status' + (failed.length ? '' : ' ok');
+    document.getElementById('tp-status-text').textContent = failed.length
+      ? '偏差 ' + failed.length + ' 项 · 符合 ' + pass
+      : '符合预期 ' + pass + ' 项 · 偏差 0';
+  }
+  evaluate();
+  setInterval(evaluate, 1500);
+
+  if (location.protocol === 'file:') {
+    var pn = document.getElementById('tp-protocol-note');
+    pn.className = 'note amber';
+    pn.style.margin = '14px 0 0';
+    pn.innerHTML = '<b>当前是 file:// 协议</b><br>扩展默认不注入本地文件页面。请在 <code>edge://extensions</code> → MaskGuard 详情开启「允许访问文件网址」后刷新；<br>或改用推荐方式：在 <code>maskguard</code> 目录执行 <code>node serve-test-page.js</code>，访问 <code>http://127.0.0.1:8765/test-page.html</code>。';
+  }
+
+  document.querySelectorAll('.checklist input[type=checkbox]').forEach(function (cb) {
+    cb.addEventListener('change', function () { cb.closest('tr').classList.toggle('done', cb.checked); });
+  });
+})();
+</script>
+</body>
+</html>

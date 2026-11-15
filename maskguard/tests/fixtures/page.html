@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>MaskGuard E2E Fixture</title></head>
+<body>
+  <h1>MaskGuard E2E Fixture</h1>
+  <p id="phone">手机号：13800138000</p>
+  <p id="idcard">证件号：110101199001011234</p>
+  <p id="email">邮箱：zhangsan@example.com</p>
+  <p id="bank">卡号：6222021234567890123</p>
+  <div id="target"><span id="secret">手动指定位置 ABC-778899</span></div>
+  <button id="add" type="button">插入动态内容</button>
+  <script id="rawScript">var rawPhone = 13800138000;</script>
+  <script>
+    document.getElementById('add').addEventListener('click', function () {
+      var p = document.createElement('p');
+      p.id = 'dynamic';
+      p.textContent = '动态手机号：13900139000';
+      document.body.appendChild(p);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MaskGuard · 页面敏感数据脱敏</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="brand">
+      <img src="icons/icon32.png" alt="" width="30" height="30">
+      <div class="brand-txt"><strong>MaskGuard</strong><small>页面敏感数据脱敏</small></div>
+    </div>
+    <label class="sw" title="全局启用 / 停用">
+      <input type="checkbox" id="globalSwitch"><span class="track"></span>
+    </label>
+  </header>
+
+  <div class="statusbar">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">正在读取页面状态…</span>
+    <button class="link" id="btnSiteToggle">停用本站</button>
+  </div>
+  <div class="notice hidden" id="notice"></div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="rules" class="on">规则</button>
+    <button data-tab="sites">站点</button>
+    <button data-tab="advanced">高级</button>
+    <button data-tab="help">帮助</button>
+  </nav>
+
+  <main class="body">
+    <section data-panel="rules" class="on">
+      <div class="row gap wrap">
+        <button class="btn primary" id="btnAdd">+ 新增规则</button>
+        <button class="btn" id="btnPick">⌖ 框选页面位置</button>
+        <button class="btn ghost" id="btnReapply">重新扫描</button>
+      </div>
+      <div id="formHost"></div>
+      <div id="ruleList" class="rules"></div>
+      <p class="hint">规则自上而下执行，已遮盖的片段不会被后续规则再次匹配。长号码规则建议排在短号码规则之前。</p>
+    </section>
+
+    <section data-panel="sites">
+      <div class="field-title">生效范围</div>
+      <label class="radio"><input type="radio" name="siteMode" value="all"><span>所有站点（默认）</span></label>
+      <label class="radio"><input type="radio" name="siteMode" value="whitelist"><span>仅对下列站点生效（白名单）</span></label>
+      <label class="radio"><input type="radio" name="siteMode" value="blacklist"><span>排除下列站点（黑名单）</span></label>
+      <div class="field-title mt">站点列表 <small>每行一个，支持 example.com、*.example.com</small></div>
+      <textarea id="siteList" rows="6" spellcheck="false" placeholder="example.com&#10;*.internal.cn"></textarea>
+      <div class="row gap mt">
+        <button class="btn" id="btnAddSite">添加当前站点</button>
+        <button class="btn primary" id="btnSaveSites">保存站点设置</button>
+      </div>
+      <p class="hint">域名匹配包含子域。也可在页面上右键「MaskGuard：启用 / 停用本站点」快速切换。</p>
+    </section>
+
+    <section data-panel="advanced">
+      <div class="field-title">检测行为</div>
+      <label class="check"><input type="checkbox" id="optDynamic"><span>监听动态内容（SPA / 懒加载 / 无限滚动）</span></label>
+      <label class="check"><input type="checkbox" id="optReveal"><span>按住 Alt 临时显示原文</span></label>
+      <label class="check"><input type="checkbox" id="optBadge"><span>图标显示本页脱敏数量</span></label>
+      <label class="check"><input type="checkbox" id="optUnsafe"><span>放行高危正则（可能卡死页面，不建议）</span></label>
+
+      <div class="field-title mt">真实页面形态覆盖</div>
+      <label class="check"><input type="checkbox" id="optJoin"><span>跨标签拼接识别（表格 formatter / 语法高亮把一个号码拆进多个文本节点）</span></label>
+      <label class="check"><input type="checkbox" id="optShadow"><span>扫描 Web Components 的 Shadow DOM（仅 open root）</span></label>
+      <label class="check"><input type="checkbox" id="optSvg"><span>同时遮盖 SVG 图表文字（ECharts SVG 渲染器；默认跳过以免破坏图表）</span></label>
+      <label class="check"><input type="checkbox" id="optAttrs"><span>遮盖展示类属性：placeholder / title / alt / aria-label / aria-valuetext</span></label>
+      <label class="check"><input type="checkbox" id="optTitle"><span>遮盖标签页标题（document.title）</span></label>
+      <p class="hint">默认只处理 DOM 文本节点。上面几项按需开启；<code>input.value</code>、<code>data-*</code>、<code>href/src</code> 一律不改（会破坏表单提交与导航）。Canvas 在线表格、图片内文字、网络响应、下载文件没有文本节点，请用「指定位置」规则配合<b>视觉模糊</b>算法整块遮盖。</p>
+      <p class="hint"><b>拼接识别的边界</b>：只在同一段文字被拆开时生效——拼接长度 ≤ 40 字符、命中需覆盖该段 70% 以上、遇到块级元素即截断、数字串两侧还有数字则不视为一个值。表格里并排的多个字段因此不会被误并成一条（否则整行会塌进第一格）。</p>
+
+      <div class="grid mt">
+        <label class="lbl" for="optDebounce">重扫防抖(ms)</label>
+        <input type="number" id="optDebounce" min="30" max="600" step="10">
+        <label class="lbl" for="optMaxText">单节点字符上限</label>
+        <input type="number" id="optMaxText" min="1000" max="50000" step="1000">
+        <label class="lbl" for="optSkip">跳过区域</label>
+        <input type="text" id="optSkip" spellcheck="false" placeholder="CSS 选择器，逗号分隔">
+      </div>
+      <div class="row gap mt"><button class="btn primary" id="btnSaveAdvanced">保存设置</button></div>
+
+      <div class="field-title mt">配置管理</div>
+      <div class="row gap wrap">
+        <button class="btn" id="btnExport">导出 JSON</button>
+        <button class="btn" id="btnImport">导入 JSON</button>
+        <button class="btn" id="btnDefaults">恢复内置规则</button>
+        <button class="btn danger" id="btnClear">清空全部规则</button>
+        <input type="file" id="fileImport" accept=".json,application/json" hidden>
+      </div>
+      <div class="row gap wrap mt">
+        <button class="btn ghost" id="btnRestore">临时还原本页</button>
+        <button class="btn" id="btnDemo">插入演示数据</button>
+      </div>
+      <p class="hint">「插入演示数据」会在当前页面右上角临时写入手机号 / 证件号 / 卡号 / 邮箱，用于验证自动识别与动态内容监听，15 秒后自动移除。「临时还原」只在当前页面生效，页面刷新或产生内容变化后会按规则重新遮盖。</p>
+    </section>
+
+    <section data-panel="help" class="help">
+      <h3>安装（Edge / Chrome）</h3>
+      <ol>
+        <li>地址栏输入 <code>edge://extensions</code>（Chrome 为 <code>chrome://extensions</code>）。</li>
+        <li>打开「开发人员模式」，点「加载解压缩的扩展」，选择本插件目录（含 manifest.json）。</li>
+        <li>固定到工具栏，点图标打开配置面板。</li>
+        <li>若要在本地 <code>file://</code> 页面生效，需在扩展详情页开启「允许访问文件网址」。</li>
+      </ol>
+      <h3>自动识别</h3>
+      <p>内置身份证、银行卡、手机号、邮箱、IP 规则。在「规则」页新增自定义正则，选择遮盖算法即可。支持 g / i / m / s 标志，可在表单里输入样例文本实时预览结果。</p>
+      <h3>手动指定位置</h3>
+      <ul>
+        <li><b>框选</b>：点「框选页面位置」，在目标页面移动鼠标并单击元素，自动生成稳定的 CSS 选择器规则。Esc 取消。</li>
+        <li><b>右键</b>：选中一段文字右键「脱敏选中的文本」（仅当前页面生效，原文不写入本地存储）；或在任意位置右键「将此位置加入脱敏」。</li>
+        <li>位置规则可在规则列表里编辑，改用其它遮盖算法或调整选择器。</li>
+      </ul>
+      <h3>快速验证</h3>
+      <p>打开任意普通网页 → 「高级」→「插入演示数据」，右上角会出现一段含手机号、证件号、卡号、邮箱的文本，应被自动遮盖；按住 Alt 可查看原文。该演示块 15 秒后自动移除。</p>
+      <h3>其它</h3>
+      <ul>
+        <li>按住 <b>Alt</b> 临时查看原文，松开恢复遮盖。</li>
+        <li>遮盖算法：全部遮盖 / 部分保留 / 固定长度 / 标签替换 / 哈希摘要 / 保格式打乱 / 自定义替换。</li>
+        <li>遮盖符可用 <code>*</code> <code>█</code> <code>●</code> 或自定义字符；<code>█</code> 为黑条视觉遮盖。</li>
+        <li>输入框、脚本、代码块、可编辑区域默认跳过，可在「高级 → 跳过区域」调整。</li>
+        <li>仅改当前页面的显示文本，不上传、不修改服务器数据。</li>
+        <li>安全策略默认拦截嵌套量词 / 交替分组等高回溯正则，并限制单文本节点字符数；确需放行可在「高级」勾选，但可能卡死页面。</li>
+        <li>规则上限 100 条；<code>html / body / *</code> 等整页选择器会被拒绝，避免误遮盖整页。</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="ftr"><span id="footHint"></span><button class="link" id="btnFull">完整设置页 ↗</button></footer>
+</div>
+<script src="masker.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>
